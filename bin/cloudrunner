@@ -1,0 +1,92 @@
+#!/usr/bin/env node
+
+'use strict';
+
+var debug = require('debug')('cloudrunner');
+
+var program = require('commander');
+var path = require('path');
+var version = require(path.join(__dirname ,'..', 'package.json')).version;
+var cli = require('../lib/cli');
+
+function list(val) {
+  return val.split(',');
+};
+
+program
+.version(version)
+.command('run <command>')
+.description('run a command on all instances of an elb')
+.option('--verify [command]', 'Command to verify')
+.option('-c,--concurrency [number]', 'Number of concurrent executions', 1)
+.option('--canary [number]', 'Number of canary executions',1)
+.option('--provider', 'Cloud Provider','aws')
+.option('--aws-region [region]', 'AWS Region','eu-west-1')
+.option('--namespace [namespace]', 'namespace for names')
+.option('--aws-access-key [key]', 'AWS Access Key')
+.option('--aws-secret-access-key [key]', 'AWS Secret Access Key')
+.option('--select-lb-members [elbname]', 'Select vms that are member of ELB')
+.option('--select-name-prefix [prefix]', 'Select vms where name begins with prefix')
+.option('--select-ids [ids]', 'Select vms where the id matches (Comma Separated)', list)
+.option('--select-ips [ips]', 'Select vms where the ips matches (Comma Separated)', list)
+.action(function(command,options) {
+  cli.run(command,options,function(err) {
+    if (err) {
+      console.log("Error", err);
+      process.exit(-1);
+    }
+  });
+})
+
+program
+.command('vms')
+.description('lists vms')
+.option('--aws-region [region]', 'AWS Region','eu-west-1')
+.option('--aws-access-key [key]', 'AWS Access Key')
+.option('--aws-secret-access-key [key]', 'AWS Secret Access Key')
+.option('--select-lb-members [elbname]', 'Select vms that are member of ELB')
+.option('--select-name-prefix [prefix]', 'Select vms where name begins with prefix')
+.option('--select-ids [ids]', 'Select vms where the id matches (Comma Separated)', list)
+.option('--select-ips [ips]', 'Select vms where the ips matches (Comma Separated)', list)
+.action(function(options) {
+  cli.vms(options,function(err) {
+    if (err) {
+      console.log("Error", err);
+      process.exit(-1);
+    }
+  });
+})
+
+program
+.command('lbs')
+.description('lists loadbalancers')
+.option('--aws-region [region]', 'AWS Region','eu-west-1')
+.option('--aws-access-key [key]', 'AWS Access Key')
+.option('--aws-secret-access-key [key]', 'AWS Secret Access Key')
+.option('--select-lb-members [elbname]', 'Select vms that are member of ELB')
+.option('--select-name-prefix [prefix]', 'Select vms where name begins with prefix')
+.option('--select-ids [ids]', 'Select vms where the id matches (Comma Separated)', list)
+.option('--select-ips [ips]', 'Select vms where the ips matches (Comma Separated)', list)
+.action(function(options) {
+  cli.lbs(options,function(err) {
+    if (err) {
+      console.log("Error", err);
+      process.exit(-1);
+    }
+  });
+})
+
+program.parse(process.argv);
+
+if (program.args.length === 0) {
+  // If no arguments print help
+  console.log( program.helpInformation() );
+} else {
+
+  var lastArgType = typeof(program.args[program.args.length -1 ]);
+
+  if (lastArgType !== 'object') {
+    console.log('Unknown subcommand '+program.args[0]);
+    console.log( program.helpInformation() );
+  }
+}
